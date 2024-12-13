@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>음식 영양 분석</title>
+    <style>
+        :root {
+            --retro-teal: #8FB5B3;
+            --retro-cream: #F5E6D3;
+            --retro-dark: #2A2A2A;
+        }
+
+        body {
+            background-color: var(--retro-teal);
+            font-family: 'Courier New', monospace;
+            color: var(--retro-dark);
+            text-align: center;
+            padding: 40px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 3em;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            margin: 40px 0;
+            text-shadow: 3px 3px 0px var(--retro-cream);
+        }
+
+        #uploadForm {
+            background-color: var(--retro-cream);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 5px 5px 0px var(--retro-dark);
+            margin: 20px 0;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            background-color: var(--retro-dark);
+            color: var(--retro-cream);
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: inline-block;
+            margin: 10px;
+            font-size: 1.1em;
+            transition: transform 0.2s;
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+        }
+
+        button[type="submit"] {
+            background-color: var(--retro-dark);
+            color: var(--retro-cream);
+            border: none;
+            padding: 10px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            transition: transform 0.2s;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+        }
+
+        #preview {
+            max-width: 300px;
+            margin: 20px auto;
+            border: 3px solid var(--retro-dark);
+            box-shadow: 5px 5px 0px var(--retro-dark);
+            background-color: white;
+            padding: 10px;
+        }
+
+        .result {
+            background-color: white;
+            margin-top: 20px;
+            padding: 20px;
+            border: 3px solid var(--retro-dark);
+            border-radius: 10px;
+            white-space: pre-wrap;
+            box-shadow: 5px 5px 0px var(--retro-dark);
+            text-align: left;
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        .selected-file-name {
+            margin-top: 10px;
+            font-style: italic;
+            color: var(--retro-dark);
+        }
+
+        .loading {
+            display: none;
+            margin: 20px 0;
+            font-style: italic;
+            color: var(--retro-dark);
+        }
+    </style>
+</head>
+<body>
+    <h1>음식 영양 분석</h1>
+    
+    <form id="uploadForm">
+        <input type="file" name="foodImage" id="foodImage" accept="image/*" required>
+        <label for="foodImage" class="file-label">이미지 선택</label>
+        <div class="selected-file-name"></div>
+        <button type="submit">분석하기</button>
+    </form>
+
+    <div class="loading">분석 중...</div>
+    <img id="preview" style="display: none;">
+    <div id="result" class="result" style="display: none;"></div>
+
+    <script>
+        const fileInput = document.getElementById('foodImage');
+        const fileNameDisplay = document.querySelector('.selected-file-name');
+        const loading = document.querySelector('.loading');
+
+        // 이미지 미리보기
+        fileInput.addEventListener('change', function(e) {
+            const preview = document.getElementById('preview');
+            const file = e.target.files[0];
+            
+            if (file) {
+                preview.style.display = 'block';
+                preview.src = URL.createObjectURL(file);
+                fileNameDisplay.textContent = `선택된 파일: ${file.name}`;
+            }
+        });
+
+        // 폼 제출 처리
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('foodImage', fileInput.files[0]);
+
+            try {
+                loading.style.display = 'block';
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+                
+                if (data.error) {
+                    resultDiv.textContent = '에러: ' + data.error;
+                } else {
+                    resultDiv.textContent = data.nutrition;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('분석 중 오류가 발생했습니다.');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
